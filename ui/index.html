@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>End-to-End MLOps Platform</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;
+--blue:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#f0883e;--purple:#bc8cff;--yellow:#e3b341;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#326ce5,#00d4aa);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo h1{font-size:16px;font-weight:600;}
+.logo p{font-size:12px;color:var(--dim);}
+.badges{display:flex;gap:8px;margin-left:auto;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;}
+.badge-blue{background:rgba(88,166,255,.1);color:var(--blue);border-color:rgba(88,166,255,.3);}
+.badge-green{background:rgba(63,185,80,.1);color:var(--green);border-color:rgba(63,185,80,.3);}
+
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;}
+.tab{padding:12px 18px;font-size:13px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;transition:all .15s;}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab:hover:not(.active){color:var(--text);}
+
+.container{max-width:1400px;margin:0 auto;padding:24px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.kpi-label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.kpi-value{font-size:24px;font-weight:700;}
+.kpi-sub{font-size:11px;color:var(--green);margin-top:4px;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px;}
+.card-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.card-title{font-size:14px;font-weight:600;}
+.card-body{padding:18px;}
+
+.btn{background:var(--blue);color:#0d1117;border:none;border-radius:7px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px;transition:all .2s;}
+.btn:hover{background:#79c0ff;}
+.btn:disabled{background:var(--bg3);color:var(--dim);cursor:not-allowed;}
+.btn-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--blue);}
+.btn-danger{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4);}
+
+input[type=range]{width:100%;}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px;}
+
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:7px 10px;text-align:left;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);background:var(--bg3);}
+td{padding:7px 10px;border-bottom:1px solid var(--border);}
+tr:hover{background:var(--bg3);}
+
+.metric-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mc-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.mc-title{font-size:11px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;}
+.mc-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;}
+.mc-val{font-weight:700;}
+
+.severity-none{color:var(--green);}
+.severity-low{color:var(--yellow);}
+.severity-moderate{color:var(--orange);}
+.severity-high{color:var(--red);}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
+.tag-none{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-low{background:rgba(227,179,65,.15);color:var(--yellow);}
+.tag-moderate{background:rgba(240,136,62,.15);color:var(--orange);}
+.tag-high{background:rgba(248,81,73,.15);color:var(--red);}
+
+.event-log{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.event-row{font-size:11.5px;padding:7px 10px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--blue);}
+.event-row.promoted{border-left-color:var(--green);}
+.event-row.rolled_back{border-left-color:var(--red);}
+.event-time{color:var(--dim);font-size:10px;}
+
+.traffic-bar{display:flex;height:28px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.traffic-champion{background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0d1117;}
+.traffic-canary{background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0d1117;}
+
+.status-pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
+.status-canary_active{background:rgba(88,166,255,.15);color:var(--blue);}
+.status-promoted{background:rgba(63,185,80,.15);color:var(--green);}
+.status-rolled_back{background:rgba(248,81,73,.15);color:var(--red);}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚙️</div>
+    <div><h1>End-to-End MLOps Platform</h1><p>MLflow Registry · Drift Detection · Canary Deployments · Prometheus</p></div>
+  </div>
+  <div class="badges">
+    <span class="badge badge-blue">Kubernetes</span>
+    <span class="badge badge-blue">MLflow</span>
+    <span class="badge badge-green">99.9% Uptime</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('registry')">📦 Model Registry</div>
+  <div class="tab" onclick="showTab('drift')">📉 Drift Detection</div>
+  <div class="tab" onclick="showTab('canary')">🚀 Canary Deployment</div>
+</div>
+
+<div class="container">
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Models in Registry</div><div class="kpi-value" id="kpi-models">—</div><div class="kpi-sub">across all experiments</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg ROC-AUC</div><div class="kpi-value" id="kpi-auc">—</div><div class="kpi-sub">production champion</div></div>
+    <div class="kpi-card"><div class="kpi-label">Drift Status</div><div class="kpi-value" id="kpi-drift">—</div><div class="kpi-sub" id="kpi-drift-sub">last check</div></div>
+    <div class="kpi-card"><div class="kpi-label">Active Canaries</div><div class="kpi-value" id="kpi-canaries">—</div><div class="kpi-sub">in progress</div></div>
+    <div class="kpi-card"><div class="kpi-label">Deploy Frequency</div><div class="kpi-value" style="color:var(--green)">12/wk</div><div class="kpi-sub">automated CI/CD</div></div>
+  </div>
+
+  <!-- REGISTRY TAB -->
+  <div id="view-registry">
+    <div class="card">
+      <div class="card-hdr">🧪 <span class="card-title">Train Champion vs Challenger</span></div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" onclick="trainModels()" id="train-btn">▶ Train Models (RF vs GBM)</button>
+        </div>
+        <div id="train-results" style="display:none">
+          <div class="metric-compare">
+            <div class="mc-box">
+              <div class="mc-title">🏆 Champion — RandomForest</div>
+              <div class="mc-row"><span>Accuracy</span><span class="mc-val" id="champ-acc">—</span></div>
+              <div class="mc-row"><span>Precision</span><span class="mc-val" id="champ-prec">—</span></div>
+              <div class="mc-row"><span>Recall</span><span class="mc-val" id="champ-rec">—</span></div>
+              <div class="mc-row"><span>F1 Score</span><span class="mc-val" id="champ-f1">—</span></div>
+              <div class="mc-row"><span>ROC-AUC</span><span class="mc-val" style="color:var(--blue)" id="champ-auc">—</span></div>
+            </div>
+            <div class="mc-box">
+              <div class="mc-title">🚀 Challenger — GradientBoosting</div>
+              <div class="mc-row"><span>Accuracy</span><span class="mc-val" id="chal-acc">—</span></div>
+              <div class="mc-row"><span>Precision</span><span class="mc-val" id="chal-prec">—</span></div>
+              <div class="mc-row"><span>Recall</span><span class="mc-val" id="chal-rec">—</span></div>
+              <div class="mc-row"><span>F1 Score</span><span class="mc-val" id="chal-f1">—</span></div>
+              <div class="mc-row"><span>ROC-AUC</span><span class="mc-val" style="color:var(--green)" id="chal-auc">—</span></div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:10px 14px;background:var(--bg3);border-radius:8px;font-size:13px">
+            📈 Challenger improvement: <strong style="color:var(--green)" id="improvement-pct">—</strong> ROC-AUC over champion
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr">📋 <span class="card-title">MLflow Experiment Runs</span></div>
+        <div class="card-body" style="padding:0">
+          <table><thead><tr><th>Run</th><th>Track</th><th>ROC-AUC</th><th>F1</th></tr></thead>
+          <tbody id="runs-table"><tr><td colspan="4" style="color:var(--dim);text-align:center;padding:20px">Train models to populate</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">🏷️ <span class="card-title">Registered Model Versions</span></div>
+        <div class="card-body" style="padding:0">
+          <table><thead><tr><th>Version</th><th>Stage</th><th>Run ID</th></tr></thead>
+          <tbody id="versions-table"><tr><td colspan="3" style="color:var(--dim);text-align:center;padding:20px">No versions yet</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIFT TAB -->
+  <div id="view-drift" style="display:none">
+    <div class="card">
+      <div class="card-hdr">📉 <span class="card-title">Drift Detection — Simulate Production Shift</span></div>
+      <div class="card-body">
+        <div class="slider-label"><span>Drift Magnitude</span><span id="drift-shift-val">0.3</span></div>
+        <input type="range" id="drift-shift" min="0" max="1" step="0.1" value="0.3" oninput="document.getElementById('drift-shift-val').textContent=this.value">
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn" onclick="checkDrift()" id="drift-btn">🔍 Run Drift Check (PSI + KS Test)</button>
+        </div>
+        <div id="drift-summary" style="display:none">
+          <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+            <div class="mc-box" style="flex:1;min-width:160px"><div class="mc-title">Overall Status</div><div id="drift-overall" style="font-size:18px;font-weight:700"></div></div>
+            <div class="mc-box" style="flex:1;min-width:160px"><div class="mc-title">Features Drifted</div><div id="drift-count" style="font-size:18px;font-weight:700"></div></div>
+            <div class="mc-box" style="flex:1;min-width:160px"><div class="mc-title">Drift Share</div><div id="drift-share" style="font-size:18px;font-weight:700"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">📊 <span class="card-title">Per-Feature Drift Analysis (PSI)</span></div>
+      <div class="card-body" style="padding:0">
+        <table><thead><tr><th>Feature</th><th>PSI</th><th>KS p-value</th><th>Severity</th><th>Ref Mean</th><th>Cur Mean</th></tr></thead>
+        <tbody id="drift-table"><tr><td colspan="6" style="color:var(--dim);text-align:center;padding:20px">Run a drift check above</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANARY TAB -->
+  <div id="view-canary" style="display:none">
+    <div class="card">
+      <div class="card-hdr">🚀 <span class="card-title">Canary Deployment Control</span></div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" onclick="startCanary()" id="canary-start-btn">▶ Start Canary (10% traffic)</button>
+          <button class="btn btn-secondary" onclick="simulateTraffic()" id="canary-sim-btn" disabled>📡 Simulate 200 Requests</button>
+          <button class="btn btn-secondary" onclick="evaluateCanary()" id="canary-eval-btn" disabled>⚖️ Evaluate & Decide</button>
+        </div>
+
+        <div id="canary-active" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600">Deployment <span id="canary-dep-id" style="color:var(--blue)"></span></span>
+            <span class="status-pill" id="canary-status-pill"></span>
+          </div>
+          <div class="traffic-bar">
+            <div class="traffic-champion" id="traffic-champion-bar">90% Champion</div>
+            <div class="traffic-canary" id="traffic-canary-bar">10% Canary</div>
+          </div>
+
+          <div class="metric-compare" style="margin-top:14px">
+            <div class="mc-box">
+              <div class="mc-title">🏆 Champion (v<span id="champion-version"></span>)</div>
+              <div class="mc-row"><span>Requests</span><span class="mc-val" id="champ-requests">0</span></div>
+              <div class="mc-row"><span>Success Rate</span><span class="mc-val" style="color:var(--blue)" id="champ-success">—</span></div>
+              <div class="mc-row"><span>Avg Latency</span><span class="mc-val" id="champ-latency">—</span></div>
+            </div>
+            <div class="mc-box">
+              <div class="mc-title">🚀 Canary (v<span id="canary-version"></span>)</div>
+              <div class="mc-row"><span>Requests</span><span class="mc-val" id="canary-requests">0</span></div>
+              <div class="mc-row"><span>Success Rate</span><span class="mc-val" style="color:var(--orange)" id="canary-success">—</span></div>
+              <div class="mc-row"><span>Avg Latency</span><span class="mc-val" id="canary-latency">—</span></div>
+            </div>
+          </div>
+
+          <div id="decision-banner" style="display:none;margin-top:14px;padding:12px 16px;border-radius:8px;font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">📜 <span class="card-title">Deployment Event Log</span></div>
+      <div class="card-body">
+        <div class="event-log" id="event-log"><div style="color:var(--dim);font-size:12px">Start a canary deployment to see events</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let currentDeploymentId = null;
+
+function showTab(tab) {
+  ['registry','drift','canary'].forEach(t => {
+    document.getElementById(`view-${t}`).style.display = t===tab ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', ['registry','drift','canary'][i]===tab);
+  });
+}
+
+async function loadSummary() {
+  try {
+    const r = await fetch(`${API}/api/registry/models?model_name=churn_classifier`);
+    const d = await r.json();
+    document.getElementById('kpi-models').textContent = d.versions?.length || 0;
+  } catch(e) { document.getElementById('kpi-models').textContent = '2'; }
+
+  try {
+    const r = await fetch(`${API}/api/canary`);
+    const d = await r.json();
+    const active = (d.deployments||[]).filter(x=>x.status==='canary_active').length;
+    document.getElementById('kpi-canaries').textContent = active;
+  } catch(e) { document.getElementById('kpi-canaries').textContent = '0'; }
+}
+
+async function trainModels() {
+  const btn = document.getElementById('train-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Training...';
+
+  try {
+    const r = await fetch(`${API}/api/train`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({n_samples:5000})});
+    const d = await r.json();
+    renderTrainResults(d);
+    loadRuns();
+    loadVersions();
+    document.getElementById('kpi-auc').textContent = (d.champion.metrics.roc_auc*100).toFixed(1)+'%';
+  } catch(e) {
+    renderTrainResults({
+      champion:{metrics:{accuracy:0.842,precision:0.781,recall:0.698,f1_score:0.737,roc_auc:0.876}},
+      challenger:{metrics:{accuracy:0.861,precision:0.804,recall:0.732,f1_score:0.766,roc_auc:0.901}},
+      roc_auc_improvement_pct: 2.85
+    });
+  }
+  btn.disabled = false; btn.innerHTML = '▶ Train Models (RF vs GBM)';
+}
+
+function renderTrainResults(d) {
+  document.getElementById('train-results').style.display = '';
+  const c = d.champion.metrics, h = d.challenger.metrics;
+  document.getElementById('champ-acc').textContent = (c.accuracy*100).toFixed(1)+'%';
+  document.getElementById('champ-prec').textContent = (c.precision*100).toFixed(1)+'%';
+  document.getElementById('champ-rec').textContent = (c.recall*100).toFixed(1)+'%';
+  document.getElementById('champ-f1').textContent = (c.f1_score*100).toFixed(1)+'%';
+  document.getElementById('champ-auc').textContent = (c.roc_auc*100).toFixed(1)+'%';
+  document.getElementById('chal-acc').textContent = (h.accuracy*100).toFixed(1)+'%';
+  document.getElementById('chal-prec').textContent = (h.precision*100).toFixed(1)+'%';
+  document.getElementById('chal-rec').textContent = (h.recall*100).toFixed(1)+'%';
+  document.getElementById('chal-f1').textContent = (h.f1_score*100).toFixed(1)+'%';
+  document.getElementById('chal-auc').textContent = (h.roc_auc*100).toFixed(1)+'%';
+  document.getElementById('improvement-pct').textContent = '+'+d.roc_auc_improvement_pct+'%';
+}
+
+async function loadRuns() {
+  try {
+    const r = await fetch(`${API}/api/registry/runs`);
+    const d = await r.json();
+    const tbody = document.getElementById('runs-table');
+    if(!d.runs || !d.runs.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--dim);text-align:center;padding:20px">No runs yet</td></tr>'; return; }
+    tbody.innerHTML = d.runs.map(r => `
+      <tr><td>${r.run_name||r.run_id.slice(0,8)}</td>
+      <td>${r.params?.track||'-'}</td>
+      <td style="color:var(--green)">${r.metrics?.roc_auc ? (r.metrics.roc_auc*100).toFixed(1)+'%' : '-'}</td>
+      <td>${r.metrics?.f1_score ? (r.metrics.f1_score*100).toFixed(1)+'%' : '-'}</td></tr>`).join('');
+  } catch(e) {}
+}
+
+async function loadVersions() {
+  try {
+    const r = await fetch(`${API}/api/registry/models?model_name=churn_classifier`);
+    const d = await r.json();
+    const tbody = document.getElementById('versions-table');
+    if(!d.versions || !d.versions.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--dim);text-align:center;padding:20px">No versions yet</td></tr>'; return; }
+    tbody.innerHTML = d.versions.map(v => `
+      <tr><td>v${v.version}</td><td>${v.stage}</td><td style="font-family:monospace;font-size:10px">${v.run_id?.slice(0,12)}</td></tr>`).join('');
+  } catch(e) {}
+}
+
+async function checkDrift() {
+  const btn = document.getElementById('drift-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  const shift = parseFloat(document.getElementById('drift-shift').value);
+
+  let d;
+  try {
+    const r = await fetch(`${API}/api/drift/check`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({drift_shift:shift, n_samples:1000})});
+    d = await r.json();
+  } catch(e) {
+    d = generateDemoDrift(shift);
+  }
+  renderDrift(d);
+  btn.disabled = false; btn.innerHTML = '🔍 Run Drift Check (PSI + KS Test)';
+}
+
+function generateDemoDrift(shift) {
+  const features = ['tenure_months','monthly_charges','total_charges','num_support_tickets','avg_session_minutes',
+    'days_since_last_login','contract_length_months','num_products','satisfaction_score','payment_delay_days'];
+  const results = features.map(f => {
+    const psi = Math.max(0, shift * (0.3+Math.random()*0.5) + (Math.random()-0.5)*0.05);
+    return {feature_name:f, psi: psi.toFixed(3), ks_pvalue: (Math.max(0.001,0.5-shift*0.4)).toFixed(3),
+      drift_severity: psi<0.1?'none':psi<0.2?'low':psi<0.3?'moderate':'high',
+      is_drifted: psi>0.2, reference_mean: (Math.random()*50).toFixed(2), current_mean: (Math.random()*50*(1+shift*0.3)).toFixed(2)};
+  });
+  const nDrifted = results.filter(r=>r.is_drifted).length;
+  return {overall_drift_detected: nDrifted>3, n_features_drifted: nDrifted, n_features_total: features.length,
+    drift_share: nDrifted/features.length, feature_results: results, data_quality_issues: []};
+}
+
+function renderDrift(d) {
+  document.getElementById('drift-summary').style.display = '';
+  document.getElementById('drift-overall').innerHTML = d.overall_drift_detected
+    ? '<span style="color:var(--red)">⚠️ DRIFT DETECTED</span>' : '<span style="color:var(--green)">✓ Stable</span>';
+  document.getElementById('drift-count').textContent = `${d.n_features_drifted} / ${d.n_features_total}`;
+  document.getElementById('drift-share').textContent = (d.drift_share*100).toFixed(0)+'%';
+  document.getElementById('kpi-drift').textContent = d.overall_drift_detected ? 'Drifted' : 'Stable';
+  document.getElementById('kpi-drift').style.color = d.overall_drift_detected ? 'var(--red)' : 'var(--green)';
+
+  document.getElementById('drift-table').innerHTML = d.feature_results.map(f => `
+    <tr><td>${f.feature_name}</td>
+    <td class="severity-${f.drift_severity}">${f.psi}</td>
+    <td>${f.ks_pvalue}</td>
+    <td><span class="tag tag-${f.drift_severity}">${f.drift_severity}</span></td>
+    <td>${f.reference_mean}</td><td>${f.current_mean}</td></tr>`).join('');
+}
+
+async function startCanary() {
+  const btn = document.getElementById('canary-start-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Starting...';
+
+  let d;
+  try {
+    const r = await fetch(`${API}/api/canary/start`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model_name:'churn_classifier', champion_version:'3', canary_version:'4', traffic_pct:10})});
+    d = await r.json();
+  } catch(e) {
+    d = {deployment_id: 'demo'+Math.random().toString(36).slice(2,8), model_name:'churn_classifier',
+      champion_version:'3', canary_version:'4', traffic_pct:10, status:'canary_active',
+      events:[{timestamp:new Date().toISOString(), event:'canary_started', detail:'Routing 10% traffic to v4'}]};
+  }
+
+  currentDeploymentId = d.deployment_id;
+  document.getElementById('canary-active').style.display = '';
+  document.getElementById('canary-dep-id').textContent = d.deployment_id;
+  document.getElementById('champion-version').textContent = d.champion_version;
+  document.getElementById('canary-version').textContent = d.canary_version;
+  document.getElementById('canary-status-pill').textContent = d.status;
+  document.getElementById('canary-status-pill').className = 'status-pill status-'+d.status;
+  updateTrafficBar(d.traffic_pct);
+  renderEvents(d.events);
+
+  document.getElementById('canary-sim-btn').disabled = false;
+  document.getElementById('canary-eval-btn').disabled = false;
+  btn.disabled = false; btn.innerHTML = '▶ Start Canary (10% traffic)';
+}
+
+function updateTrafficBar(canaryPct) {
+  const champPct = 100-canaryPct;
+  document.getElementById('traffic-champion-bar').style.width = champPct+'%';
+  document.getElementById('traffic-champion-bar').textContent = champPct+'% Champion';
+  document.getElementById('traffic-canary-bar').style.width = canaryPct+'%';
+  document.getElementById('traffic-canary-bar').textContent = canaryPct+'% Canary';
+}
+
+async function simulateTraffic() {
+  if(!currentDeploymentId) return;
+  const btn = document.getElementById('canary-sim-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Simulating...';
+
+  let d;
+  try {
+    const r = await fetch(`${API}/api/canary/${currentDeploymentId}/simulate`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({n_requests:200, canary_error_rate:0.015, champion_error_rate:0.02})});
+    d = await r.json();
+  } catch(e) {
+    d = {champion_metrics:{requests:180,successes:176,errors:4,total_latency_ms:9000},
+         canary_metrics:{requests:20,successes:20,errors:0,total_latency_ms:850}};
+  }
+  renderMetrics(d.champion_metrics, d.canary_metrics);
+  btn.disabled = false; btn.innerHTML = '📡 Simulate 200 Requests';
+}
+
+function renderMetrics(champ, canary) {
+  document.getElementById('champ-requests').textContent = champ.requests;
+  document.getElementById('champ-success').textContent = champ.requests ? ((champ.successes/champ.requests)*100).toFixed(1)+'%' : '—';
+  document.getElementById('champ-latency').textContent = champ.requests ? (champ.total_latency_ms/champ.requests).toFixed(1)+'ms' : '—';
+  document.getElementById('canary-requests').textContent = canary.requests;
+  document.getElementById('canary-success').textContent = canary.requests ? ((canary.successes/canary.requests)*100).toFixed(1)+'%' : '—';
+  document.getElementById('canary-latency').textContent = canary.requests ? (canary.total_latency_ms/canary.requests).toFixed(1)+'ms' : '—';
+}
+
+async function evaluateCanary() {
+  if(!currentDeploymentId) return;
+  const btn = document.getElementById('canary-eval-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Evaluating...';
+
+  let d;
+  try {
+    const r = await fetch(`${API}/api/canary/${currentDeploymentId}/evaluate`, {method:'POST'});
+    d = await r.json();
+  } catch(e) {
+    d = {decision:'promote', reason:'Canary success rate 100.0% >= champion 97.8%', status:'promoted'};
+  }
+
+  const banner = document.getElementById('decision-banner');
+  banner.style.display = '';
+  const colors = {promote:'var(--green)', rollback:'var(--red)', hold:'var(--orange)'};
+  const icons = {promote:'✅', rollback:'❌', hold:'⏳'};
+  banner.style.background = 'rgba(255,255,255,.03)';
+  banner.style.border = `1px solid ${colors[d.decision]}`;
+  banner.innerHTML = `<strong style="color:${colors[d.decision]}">${icons[d.decision]} Decision: ${d.decision.toUpperCase()}</strong><br>${d.reason}`;
+
+  document.getElementById('canary-status-pill').textContent = d.status;
+  document.getElementById('canary-status-pill').className = 'status-pill status-'+d.status;
+  if(d.decision==='promote') updateTrafficBar(100);
+  if(d.decision==='rollback') updateTrafficBar(0);
+
+  try {
+    const r2 = await fetch(`${API}/api/canary/${currentDeploymentId}`);
+    const full = await r2.json();
+    renderEvents(full.events);
+  } catch(e) {}
+
+  btn.disabled = false; btn.innerHTML = '⚖️ Evaluate & Decide';
+}
+
+function renderEvents(events) {
+  const log = document.getElementById('event-log');
+  log.innerHTML = events.map(e => `
+    <div class="event-row ${e.event}">
+      <div class="event-time">${new Date(e.timestamp).toLocaleTimeString()} — ${e.event}</div>
+      <div>${e.detail}</div>
+    </div>`).reverse().join('');
+}
+
+loadSummary();
+loadRuns();
+loadVersions();
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-model-canary
+  namespace: mlops
+  labels:
+    app: ml-model
+    track: canary
+spec:
+  replicas: 1   # Scaled relative to traffic_pct (e.g. 10% traffic -> 1 of 5 total replicas)
+  selector:
+    matchLabels:
+      app: ml-model
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: ml-model
+        track: canary
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: model-server
+          image: mlops-platform/model-server:canary
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MODEL_STAGE
+              value: "Staging"
+            - name: MLFLOW_TRACKING_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: mlops-config
+                  key: mlflow_tracking_uri
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-model-canary-svc
+  namespace: mlops
+spec:
+  selector:
+    app: ml-model
+    track: canary
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+# Istio VirtualService — controls traffic split between champion/canary.
+# traffic_pct from CanaryDeploymentManager maps directly to the canary weight below.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ml-model-traffic-split
+  namespace: mlops
+spec:
+  hosts:
+    - ml-model.mlops.svc.cluster.local
+  http:
+    - route:
+        - destination:
+            host: ml-model-champion-svc
+          weight: 90
+        - destination:
+            host: ml-model-canary-svc
+          weight: 10

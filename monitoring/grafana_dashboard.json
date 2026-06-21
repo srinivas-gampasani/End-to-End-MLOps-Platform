@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "MLOps Platform — Model Observability",
+    "tags": ["mlops", "model-monitoring"],
+    "timezone": "utc",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Prediction Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {"expr": "sum(rate(mlops_prediction_requests_total[5m])) by (model_version, status)"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Prediction Latency (p50/p95/p99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {"expr": "histogram_quantile(0.50, rate(mlops_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p50"},
+          {"expr": "histogram_quantile(0.95, rate(mlops_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p95"},
+          {"expr": "histogram_quantile(0.99, rate(mlops_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p99"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Feature Drift — PSI Score",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {"expr": "mlops_feature_drift_psi"}
+        ],
+        "thresholds": [
+          {"value": 0.1, "color": "yellow"},
+          {"value": 0.2, "color": "orange"},
+          {"value": 0.3, "color": "red"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Overall Drift Share by Model",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {"expr": "mlops_drift_share"}
+        ],
+        "thresholds": {"steps": [
+          {"value": 0, "color": "green"},
+          {"value": 0.2, "color": "yellow"},
+          {"value": 0.3, "color": "red"}
+        ]}
+      },
+      {
+        "id": 5,
+        "title": "Canary Traffic Split",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 16},
+        "targets": [
+          {"expr": "mlops_canary_traffic_percent"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Champion vs Canary Success Rate",
+        "type": "graph",
+        "gridPos": {"h": 6, "w": 16, "x": 8, "y": 16},
+        "targets": [
+          {"expr": "mlops_canary_success_rate{track=\"champion\"}", "legendFormat": "Champion"},
+          {"expr": "mlops_canary_success_rate{track=\"canary\"}", "legendFormat": "Canary"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Registered Model Versions by Stage",
+        "type": "bargauge",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 22},
+        "targets": [
+          {"expr": "mlops_model_versions_total"}
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 39
+  }
+}

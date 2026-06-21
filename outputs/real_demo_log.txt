@@ -1,0 +1,59 @@
+╭──────────────────────────────────────╮
+│ MLOps Platform — Full Lifecycle Demo │
+╰──────────────────────────────────────╯
+
+1. Training Champion (RandomForest) vs Challenger (GradientBoosting)
+2026/06/21 18:46:03 INFO mlflow.store.db.utils: Creating initial MLflow database tables...
+2026/06/21 18:46:03 INFO mlflow.store.db.utils: Updating database tables
+2026/06/21 18:46:04 INFO mlflow.tracking.fluent: Experiment with name 'mlops_platform' does not exist. Creating a new experiment.
+                Training Results                
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Metric    ┃ Champion (RF) ┃ Challenger (GBM) ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ accuracy  │ 0.7640        │ 0.7680           │
+│ precision │ 0.5211        │ 0.5315           │
+│ recall    │ 0.1548        │ 0.2469           │
+│ f1_score  │ 0.2387        │ 0.3371           │
+│ roc_auc   │ 0.7125        │ 0.7146           │
+└───────────┴───────────────┴──────────────────┘
+Challenger improvement: +0.29% ROC-AUC
+
+2. Logging to MLflow Registry
+2026/06/21 18:46:08 WARNING mlflow.models.model: `artifact_path` is deprecated. Please use `name` instead.
+Successfully registered model 'churn_classifier'.
+Created version '1' of model 'churn_classifier'.
+2026-06-21 18:46:22,434 [INFO] Logged run d261ad924e934d51a080cbd4f0ae303b for churn_classifier
+2026/06/21 18:46:22 WARNING mlflow.models.model: `artifact_path` is deprecated. Please use `name` instead.
+Registered model 'churn_classifier' already exists. Creating a new version of this model...
+Created version '2' of model 'churn_classifier'.
+2026-06-21 18:46:31,791 [INFO] Logged run 4d1fb40765854e6ba30a22887011df0e for churn_classifier
+✓ Champion run: d261ad924e934d51a080cbd4f0ae303b
+✓ Challenger run: 4d1fb40765854e6ba30a22887011df0e
+
+3. Drift Detection — Simulating Production Data Shift
+Overall drift detected: YES
+Features drifted: 8/10 (80.0%)
+            Feature Drift (PSI)             
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┓
+┃ Feature               ┃ PSI   ┃ Severity ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━┩
+│ num_support_tickets   │ 0.129 │ low      │
+│ satisfaction_score    │ 0.089 │ none     │
+│ payment_delay_days    │ 0.085 │ none     │
+│ monthly_charges       │ 0.077 │ none     │
+│ avg_session_minutes   │ 0.074 │ none     │
+│ days_since_last_login │ 0.049 │ none     │
+└───────────────────────┴───────┴──────────┘
+
+4. Canary Deployment — Progressive Rollout
+2026-06-21 18:46:31,994 [INFO] Started canary 46dc8bb4: churn_classifier 3 -> 4 @ 10%
+Started canary 46dc8bb4: v3 -> v4 @ 10% traffic
+2026-06-21 18:46:31,995 [INFO] Deployment 46dc8bb4: PROMOTED 4
+
+Champion: 266 requests, 263/266 success
+Canary:   34 requests, 34/34 success
+
+Decision: PROMOTE
+Reason: Canary success rate 100.00% >= champion 98.87%
+
+✓ Full MLOps lifecycle demo complete!

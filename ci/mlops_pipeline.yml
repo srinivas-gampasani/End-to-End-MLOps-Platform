@@ -1,0 +1,119 @@
+name: MLOps Platform — Train, Validate, Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "models/**"
+      - "features/**"
+      - "pipelines/**"
+  schedule:
+    - cron: "0 3 * * 1"  # Weekly Monday 03:00 UTC retrain
+  workflow_dispatch:
+
+env:
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run test suite
+        run: pytest tests/ -v --tb=short --junitxml=test-results.xml
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+
+  train:
+    name: Train Challenger Model
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.train.outputs.run_id }}
+      challenger_metric: ${{ steps.train.outputs.metric }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements.txt
+      - id: train
+        name: Run training pipeline
+        run: |
+          python -m pipelines.train_and_register --output-format=github-actions
+
+  validate:
+    name: Validate Against Champion (Shadow Eval)
+    needs: train
+    runs-on: ubuntu-latest
+    outputs:
+      promote: ${{ steps.validate.outputs.promote }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements.txt
+      - id: validate
+        name: Compare challenger vs champion
+        run: |
+          python -m registry.validate_challenger \
+            --run-id ${{ needs.train.outputs.run_id }} \
+            --min-improvement 1.0
+
+  drift_check:
+    name: Pre-Deploy Drift Check
+    needs: validate
+    if: needs.validate.outputs.promote == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements.txt
+      - name: Run drift detection against production data
+        run: python -m drift.run_check --fail-on-high-drift
+
+  deploy_canary:
+    name: Deploy Canary (10% traffic)
+    needs: [validate, drift_check]
+    if: needs.validate.outputs.promote == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure kubectl
+        run: echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+      - name: Apply canary deployment
+        run: |
+          kubectl --kubeconfig=kubeconfig.yaml apply -f k8s/deployment-canary.yaml
+          kubectl --kubeconfig=kubeconfig.yaml apply -f k8s/namespace-and-scaling.yaml
+      - name: Monitor canary for 30 minutes
+        run: python -m deployment.monitor_canary --duration-minutes 30
+
+  promote_or_rollback:
+    name: Promote or Rollback
+    needs: deploy_canary
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evaluate canary health and promote/rollback
+        run: python -m deployment.finalize_canary
+      - name: Notify Slack
+        if: always()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"MLOps pipeline run complete for commit ${{ github.sha }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}

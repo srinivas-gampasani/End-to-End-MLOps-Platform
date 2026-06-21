@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "mlops-platform-api"
+    static_configs:
+      - targets: ["mlops-api:8000"]
+    metrics_path: /metrics
+
+  - job_name: "ml-model-champion"
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: ["mlops"]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_track]
+        regex: champion
+        action: keep
+
+  - job_name: "ml-model-canary"
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: ["mlops"]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_track]
+        regex: canary
+        action: keep
